@@ -1,0 +1,76 @@
+<?php
+
+use Drupal\webform\WebformSubmissionInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
+use Drupal\custom_webform_handler\Controller\OpenAIReportController;
+
+/**
+ * Implements hook_webform_submission_insert().
+ */
+function custom_webform_handler_webform_submission_insert(WebformSubmissionInterface $webform_submission, $update = TRUE) {
+  $webform_id = $webform_submission->getWebform()->id();
+
+  // List all webform IDs that should trigger the report generation.
+  $allowed_webforms = ['generate_report', 'generate_statement_of_work'];  // Add your new webform ID here
+
+  if (in_array($webform_id, $allowed_webforms)) {
+    // Get the submitted values.
+    $values = $webform_submission->getData();
+
+    // Log the submitted values for debugging.
+    \Drupal::logger('custom_webform_handler')->notice('Submitted values: ' . print_r($values, TRUE));
+
+    // Ensure necessary fields are present in the submission data.
+    if (!isset($values['openai_api_key']) || !isset($values['openai_assistant_id']) || !isset($values['openai_prompt']) || !isset($values['email_subject']) || !isset($values['view_name']) || !isset($values['view_display_name'])) {
+      \Drupal::logger('custom_webform_handler')->error('Missing required fields in webform submission.');
+      return;
+    }
+
+    // Get additional fields from the webform.
+    $api_key = $values['openai_api_key'];
+    $assistant_id = $values['openai_assistant_id'];
+    $prompt = $values['openai_prompt'];
+    $email_subject = $values['email_subject'];
+    $view_name = $values['view_name'];
+    $view_display_name = $values['view_display_name'];
+
+    // Log the details before generating the report.
+    \Drupal::logger('custom_webform_handler')->notice('Generating report with details: API Key: ' . $api_key . ', Assistant ID: ' . $assistant_id . ', Prompt: ' . $prompt . ', View Name: ' . $view_name . ', View Display Name: ' . $view_display_name);
+
+    // Generate the report.
+    $reportController = \Drupal::service('custom_webform_handler.openai_report_controller');
+    $report = $reportController->generateReport($values, $api_key, $assistant_id, $prompt, $view_name, $view_display_name);
+
+    // Log the generated report for debugging.
+    \Drupal::logger('custom_webform_handler')->notice('Generated report: ' . print_r($report, TRUE));
+
+    // Send the email only with the generated report.
+    if ($report) {
+      $reportController->sendEmail($report, \Drupal::currentUser()->getEmail(), $email_subject);
+    }
+  }
+}
+
+/**
+ * Implements hook_mail().
+ */
+function custom_webform_handler_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'report_generated':
+      $message['subject'] = $params['subject'];
+      $message['body'][] = $params['message'];
+      break;
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function custom_webform_handler_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  $webform_ids = ['webform_submission_generate_report_add_form', 'webform_submission_generate_statement_of_work_add_form'];  // Replace with your webform's form ID
+
+  if (in_array($form_id, $webform_ids)) {
+    $form['#attached']['library'][] = 'custom_webform_handler/custom_webform_handler';
+  }
+}

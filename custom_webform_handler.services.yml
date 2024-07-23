@@ -1,0 +1,12 @@
+services:
+  logger.channel.custom_webform_handler:
+    class: Drupal\Core\Logger\LoggerChannel
+    arguments: ['custom_webform_handler']
+
+  custom_webform_handler.view_data_service:
+    class: Drupal\custom_webform_handler\Service\ViewDataService
+    arguments: ['@logger.factory', '@renderer']
+
+  custom_webform_handler.openai_report_controller:
+    class: Drupal\custom_webform_handler\Controller\OpenAIReportController
+    arguments: ['@plugin.manager.mail', '@logger.factory', '@http_client', '@custom_webform_handler.view_data_service']

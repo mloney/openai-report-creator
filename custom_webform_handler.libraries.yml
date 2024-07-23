@@ -1,0 +1,11 @@
+custom_webform_handler:
+  version: 1.x
+  js:
+    js/custom_webform_handler.js: {}
+  css:
+    theme:
+      css/custom_webform_handler.css: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings

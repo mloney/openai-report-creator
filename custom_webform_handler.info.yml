@@ -1,0 +1,7 @@
+name: 'Custom Webform Handler'
+type: module
+description: 'Handles custom webform submissions.'
+core_version_requirement: ^8 || ^9 || ^10
+package: Custom
+dependencies:
+  - drupal:webform

@@ -1,0 +1,7 @@
+custom_webform_handler.test_views_interaction:
+  path: '/test-views-interaction'
+  defaults:
+    _controller: '\Drupal\custom_webform_handler\Controller\OpenAIReportController::testViewsInteraction'
+    _title: 'Test Views Interaction'
+  requirements:
+    _permission: 'access content'
